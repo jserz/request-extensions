@@ -12,7 +12,7 @@
     "author": "jserz <rnjnfns8@126.com>",
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/jserz/request-extensions.git"
     },
     "license": "MIT",
     "engines": {
