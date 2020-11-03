@@ -1,64 +1,351 @@
 # request-extensions
 
-本库是对请求（axios、fetch）常见问题处理方案的封装，包括取消请求、重复提交请求、缓存请求等。
+请求（axios、fetch）扩展，包括取消请求的扩展、不能重复提交请求的扩展、缓存请求的扩展等。
+
+## 功能
+
+- 取消请求的扩展
+- 不能重复提交请求的扩展
+- 缓存请求的扩展
 
 ## 安装
 
 ```
 yarn add request-extensions
 ```
-## api
+
+## 示例
+
+### axios
+
+#### 封装 axios
+
+```js
+// http.ts
+import axios from 'axios';
+import { axiosExt } from 'request-extensions';
+const { cancelableAxios, isCancel, notRepeatableAxios, isRepeatSubmit, cacheableAxios } = axiosExt;
+
+// 这个适配器，可以是自定义或用 axios 默认的
+let adapter = axios.defaults.adapter;
+// 使用不能重复提交请求扩展，如果重复提交，后一个提交请求不能发起
+adapter = notRepeatableAxios(adapter);
+// 使用可以取消请求扩展，如果前一个请求没有完成，后一个请求又发起，则会取消前一个请求
+adapter = cancelableAxios(adapter);
+// 使用可缓存请求扩展，如果前一个请求已经完成，同时后一个请求和前一个请求参数相同，则可以取缓存数据
+adapter = cacheableAxios(adapter, {
+    // 缓存请求的过期间隔，单位毫秒，默认 2分钟（120000ms）
+    cacheTimeout: 120000,
+    // 获取数据之后是否需要缓存
+    isNeedCache: (res: any): boolean => {
+        return res.success
+    },
+    // 最多缓存的数据条数, 默认 50 条
+    maxCahceNumber: 50,
+})
+
+const http = axios.create({adapter});
+
+export default function ajax(config) {
+    const defaultConfig = {
+        // 表示切换路由时，取消未完成的请求
+        onlySwitchRouteCancelable: true
+    }
+    return http({ ...defaultConfig, ...config }).then((res) => {
+        return res.data
+    }).catch((error) => {
+        if (isCancel(error)) {
+            console.log('请求已经取消')
+        }
+        if (isRepeatSubmit(error)) {
+            console.log('请不要重复提交请求')
+        }
+    })
+}
+```
+
+#### 使用
+
+- 可以取消的请求
+```js
+import ajax from './http.ts'
+
+// 可取消的查询请求
+export const queryData = data => {
+    return ajax({
+        url: '/api/query-data'
+        method: 'get'
+        params: data,
+        // 表示可以取消请求，切换路由时，也会取消请求
+        cancelable: true,
+    });
+}
+```
+
+- 不可重复提交的请求
+```js
+import ajax from './http.ts'
+
+// 不能重复的提交请求
+export const postData = data => {
+    return ajax({
+        url: '/api/post-data'
+        method: 'post'
+        data,
+        // 表示不可重复提交
+        notRepeatable: true,
+    });
+}
+```
+
+- 可缓存的请求
+```js
+import ajax from './http.ts'
+
+// 可缓存的查询请求
+export const getCity = data => {
+    return ajax({
+        url: '/api/get-city'
+        method: 'get'
+        params: data,
+        // 表示可以缓存请求
+        cacheable: true,
+    });
+}
+```
+
+- 切换路由时，取消未完成的请求
+```js
+import React from 'react';
+import { Route, Switch, BrowserRouter } from 'dva/router';
+import { axiosExt } from 'request-extensions';
+import pageA from './pageA'
+import pageB from './pageB'
+
+const { cancelAllAxios } = axiosExt
+const commonRender = Component => {
+    return ({ match, location, history }) => {
+        // 切换路由时，取消未完成的请求
+        cancelAllAxios();
+        const params = (match || {}).params || {};
+        return <Component params={params} route={match} location={location} history={history} />;
+    };
+};
+
+class App extends React.PureComponent {
+    render() {
+        return (
+            <BrowserRouter basename="/abc">
+                <Switch>
+                    <Route exact path="/a" key="/a" render={commonRender(pageA)} />
+                    <Route exact path="/b" key="/b" render={commonRender(pageB)} />
+                </Switch>
+            </BrowserRouter>
+        )
+    }
+}
+
+```
+
+### fetch
+
+#### 封装 fetch
+
+```js
+// fetch.ts
+import axios from 'axios';
+import { axiosExt } from 'request-extensions';
+const { cancelableAxios, isCancel, notRepeatableAxios, isRepeatSubmit, cacheableAxios } = axiosExt;
+
+// 这个适配器，可以是自定义或用 axios 默认的
+let adapter = axios.defaults.adapter;
+// 使用不能重复提交请求扩展，如果重复提交，后一个提交请求不能发起
+adapter = notRepeatableAxios(adapter);
+// 使用可以取消请求扩展，如果前一个请求没有完成，后一个请求又发起，则会取消前一个请求
+adapter = cancelableAxios(adapter);
+// 使用可缓存请求扩展，如果前一个请求已经完成，同时后一个请求和前一个请求参数相同，则可以取缓存数据
+adapter = cacheableAxios(adapter, {
+    // 缓存请求的过期间隔，单位毫秒，默认 2分钟（120000ms）
+    cacheTimeout: 120000,
+    // 获取数据之后是否需要缓存
+    isNeedCache: (res: any): boolean => {
+        return res.success
+    },
+    // 最多缓存的数据条数, 默认 50 条
+    maxCahceNumber: 50,
+})
+
+const http = axios.create({adapter});
+
+export default function ajax(config) {
+    const defaultConfig = {
+        // 表示切换路由时，取消未完成的请求
+        onlySwitchRouteCancelable: true
+    }
+    return http({ ...defaultConfig, ...config }).then((res) => {
+        return res.data
+    }).catch((error) => {
+        if (isCancel(error)) {
+            console.log('请求已经取消')
+        }
+        if (isRepeatSubmit(error)) {
+            console.log('请不要重复提交请求')
+        }
+    })
+}
+```
+
+#### 使用
+
+- 可以取消的请求
+```js
+import ajax from './http.ts'
+
+// 可取消的查询请求
+export const queryData = data => {
+    return ajax({
+        url: '/api/query-data'
+        method: 'get'
+        params: data,
+        // 表示可以取消请求，切换路由时，也会取消请求
+        cancelable: true,
+    });
+}
+```
+
+- 不可重复提交的请求
+```js
+import ajax from './http.ts'
+
+// 不能重复的提交请求
+export const postData = data => {
+    return ajax({
+        url: '/api/post-data'
+        method: 'post'
+        data,
+        // 表示不可重复提交
+        notRepeatable: true,
+    });
+}
+```
+
+- 可缓存的请求
+```js
+import ajax from './http.ts'
+
+// 可缓存的查询请求
+export const getCity = data => {
+    return ajax({
+        url: '/api/get-city'
+        method: 'get'
+        params: data,
+        // 表示可以缓存请求
+        cacheable: true,
+    });
+}
+```
+
+- 切换路由时，取消未完成的请求
+```js
+import React from 'react';
+import { Route, Switch, BrowserRouter } from 'dva/router';
+import { axiosExt } from 'request-extensions';
+import pageA from './pageA'
+import pageB from './pageB'
+
+const { cancelAllAxios } = axiosExt
+const commonRender = Component => {
+    return ({ match, location, history }) => {
+        // 切换路由时，取消未完成的请求
+        cancelAllAxios();
+        const params = (match || {}).params || {};
+        return <Component params={params} route={match} location={location} history={history} />;
+    };
+};
+
+class App extends React.PureComponent {
+    render() {
+        return (
+            <BrowserRouter basename="/abc">
+                <Switch>
+                    <Route exact path="/a" key="/a" render={commonRender(pageA)} />
+                    <Route exact path="/b" key="/b" render={commonRender(pageB)} />
+                </Switch>
+            </BrowserRouter>
+        )
+    }
+}
+
+```
+
+
+## request-extensions api
 
 ### axios
 
 #### 取消请求
 
-- cancelableAxios
-- cancelAllAxios
-- isCancel
+- cancelableAxios(axiosAdapter): 取消请求的扩展
+- cancelAllAxios(): 取消所有未完成的请求
+- isCancel(error): 判断该请求是否被取消，在 catch 中，通过 error 判断
 
-#### 重复提交请求
-- notRepeatableAxios
-- deleteRequestingAxios
-- isRepeatSubmit
+#### 不能重复提交请求
+
+-   notRepeatableAxios(axiosAdapter): 不能重复提交请求的扩展
+-   deleteRequestingAxios(url): 手动删除请求，入列的提交请求需要使用
+-   isRepeatSubmit(error): 判断该请求是否因为重复提交被阻止，在 catch 中，通过 error 判断
 
 #### 缓存请求
 
-- cacheableAxios
-
+-   cacheableAxios(axiosAdapter)：缓存请求的扩展
 
 ### fetch
 
 #### 取消请求
-- cancelableFetch
-- cancelAllFetch
-- isCancel
+
+-   cancelableFetch(fetch): 取消请求的扩展
+-   cancelAllFetch(): 取消所有未完成的请求
+-   isCancel(error): 判断该请求是否被取消，在 catch 中，通过 error 判断
 
 #### 重复提交请求
 
-- notRepeatableFetch
-- deleteRequestingFetch
-- isRepeatSubmit
+-   notRepeatableFetch(fetch): 不能重复提交请求的扩展
+-   deleteRequestingFetch(url): 手动删除请求，入列的提交请求需要使用
+-   isRepeatSubmit(error): 判断该请求是否因为重复提交被阻止，在 catch 中，通过 error 判断
 
 #### 缓存请求
 
-- cacheableFetch
+-   cacheableFetch(fetch)：缓存请求的扩展
 
 
-## 取消请求
+## request-extensions config
 
-### axios
+```js
 
-### fetch
+const requestExtensionsConfig = {
+    // 是否可以取消请求，切换路由时也会取消未完成的请求
+    cancelable: boolean,
+    // 切换路由时，是否取消未完成的请求
+    onlySwitchRouteCancelable: boolean,
+    // 是否不能重复提交请求
+    notRepeatable: boolean,
+    // notRepeatable 为 true 时，该请求是否为入队列的请求（就是提交结果需要异步获取），如果是，则提交完成后需要手动删除请求
+    isEnqueueRequest: boolean
+    // 是否可以缓存请求
+    cacheable: boolean,
+    // cacheable 为 true 时，是否强制更新缓存数据
+    forceUpdate: boolean,
+}
 
-## 重复提交
+// axios
+ajax({
+    ...axios.config,
+    ...requestExtensionsConfig,
+})
 
-### axios
-
-### fetch
-
-## 缓存请求
-
-### axios
-
-### fetch
+// fetch
+fetch(url, {
+    ...fetch.options,
+    ...requestExtensionsConfig,
+})
+```
