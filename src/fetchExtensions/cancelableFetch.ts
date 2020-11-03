@@ -9,13 +9,11 @@ const fetchCancelMap: ICancelMap = {};
 function cancelFetch(key: string): void {
     if (fetchCancelMap[key]) {
         fetchCancelMap[key].abort();
-        console.log(`cancel url：${key}`);
         delete fetchCancelMap[key];
     }
 }
 // 取消所有的请求，一般用于路由切换时，取消前一个路由未完成的请求
 export function cancelAllFetch(): void {
-    console.log('fetchCancelMap', fetchCancelMap);
     const ajaxKeys = Object.keys(fetchCancelMap);
     ajaxKeys.forEach(key => {
         cancelFetch(key);
@@ -23,7 +21,7 @@ export function cancelAllFetch(): void {
 }
 
 //判断请求是否被取消
-export function isCancelFetch(value: any) {
+export function isCancel(value: any) {
     return !!(value && value.name === 'AbortError')
 }
 
@@ -46,7 +44,6 @@ export function cancelableFetch(fetch: any): any {
         fetchCancelMap[key] = controller;
         fetchOptions.signal = controller.signal;
         return fetch(endpoint, fetchOptions).finally(() => {
-            console.log('fetchCancelMap[key]-success', key, fetchCancelMap);
             delete fetchCancelMap[key];
         });
     };

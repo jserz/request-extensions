@@ -5,11 +5,17 @@ import transformData from '../utils/transformData';
 import addCacheItem from '../utils/addCacheItem';
 import getRequestParams from '../utils/getRequestParams';
 import { ICacheItem, ICacheableOptions, IAxiosRequestConfigExtend } from '../types';
+import deleteCache from '../utils/deleteCacheItem'
 
 // 用于缓存的数组
 let cachePool: ICacheItem[] = [];
+// 删除缓存项
+export function deleteCacheItem(url: string): void {
+    const urlKey: string = getAbsoluteUrl(url || '');
+    deleteCache(cachePool, urlKey)
+}
 // 可缓存的 axios 请求
-export default function cacheableAxios(adapter: AxiosAdapter, options?: ICacheableOptions): AxiosAdapter {
+export function cacheableAxios(adapter: AxiosAdapter, options?: ICacheableOptions): AxiosAdapter {
     return (config: IAxiosRequestConfigExtend): AxiosPromise<any> => {
         const { url, method = 'get', cacheable, forceUpdate, params, data } = config;
         // 不能缓存，则直接返回
@@ -24,12 +30,12 @@ export default function cacheableAxios(adapter: AxiosAdapter, options?: ICacheab
         const cache: ICacheItem | undefined = cachePool.find(item => item.urlKey === urlKey);
         if (!forceUpdate && cache && isEqual(requestParams, cache.params) && Date.now() < cache.expireTime) {
             const msg = `缓存数据已经存在，直接取缓存数据：${urlKey}`;
-            console.log(msg, cache.responsePromise);
+            console.log(msg);
             return cache.responsePromise;
         }
         // 发起请求
         const responsePromise: AxiosPromise<any> = adapter(config).then((response: AxiosResponse<any>) => {
-            console.log('axios raw response', response);
+            // 转换响应数据
             const responseData: any = transformData(response.data, response.headers, response.config.transformResponse);
             const { isNeedCache } = options || {};
             // 通过 isNeedCache 方法判断是否需要缓存

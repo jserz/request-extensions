@@ -12,7 +12,7 @@ export function deleteRequestingAxios(url: string): void {
 // 不能重复提交
 export function notRepeatableAxios(adapter: AxiosAdapter): AxiosAdapter {
     return (config: IAxiosRequestConfigExtend): Promise<any> => {
-        const { url, notRepeatable, isEnqueueRequest } = config;
+        const { url, notRepeatable, isEnqueueSubmit } = config;
         // 请求地址
         const key: string = getAbsoluteUrl(url || '');
         // 支持重复的请求
@@ -21,12 +21,11 @@ export function notRepeatableAxios(adapter: AxiosAdapter): AxiosAdapter {
         }
         if (requestingUrls[key]) {
             const message = `请不要重复提交表单：${key}`;
-            console.log(message);
             return Promise.reject({ __IS_REPEAT_SUBMIT__: true, message });
         }
         requestingUrls[key] = true;
         return adapter(config).finally(() => {
-            if (!isEnqueueRequest) {
+            if (!isEnqueueSubmit) {
                 deleteRequestingAxios(key);
             }
         });

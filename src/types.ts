@@ -34,8 +34,8 @@ export interface ICancelMap {
 export interface IAxiosRequestConfigExtend extends AxiosRequestConfig {
     // 是否不能重复请求
     notRepeatable?: boolean;
-    // 不能重复请求时，是否为入列的请求
-    isEnqueueRequest?: boolean;
+    // 不能重复提交请求时，是否为入列的提交请求
+    isEnqueueSubmit?: boolean;
     // 是否可以取消请求
     cancelable?: boolean;
     // 是否只有切换路由时才可以取消

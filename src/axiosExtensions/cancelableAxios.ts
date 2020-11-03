@@ -9,13 +9,11 @@ const axiosCancelMap: ICancelMap = {};
 function cancelAxios(key: string): void {
     if (axiosCancelMap[key]) {
         axiosCancelMap[key].cancel('isCanceledRequest');
-        console.log(`cancel url：${key}`);
         delete axiosCancelMap[key];
     }
 }
 // 取消所有的请求，一般用于路由切换时，取消前一个路由未完成的请求
 export function cancelAllAxios(): void {
-    console.log('axiosCancelMap', axiosCancelMap);
     const axiosKeys = Object.keys(axiosCancelMap);
     axiosKeys.forEach(key => {
         cancelAxios(key);
@@ -23,7 +21,7 @@ export function cancelAllAxios(): void {
 }
 
 //判断请求是否被取消
-export function isCancelAxios(value: any) {
+export function isCancel(value: any) {
     return axios.isCancel(value)
 }
 
