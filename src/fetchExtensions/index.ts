@@ -1,5 +1,5 @@
 import { cancelAllFetch, cancelableFetch, isCancel } from './cancelableFetch';
-import { notRepeatableFetch, deleteRequestingFetch } from './notRepeatableFetch';
+import { lockableFetch, deleteLockedUrl } from './lockableFetch';
 import { cacheableFetch, deleteCacheItem } from './cacheableFetch';
 import isRepeatSubmit from '../utils/isRepeatSubmit';
 
@@ -7,8 +7,8 @@ export default {
     cancelableFetch,
     cancelAllFetch,
     isCancel,
-    notRepeatableFetch,
-    deleteRequestingFetch,
+    lockableFetch,
+    deleteLockedUrl,
     isRepeatSubmit,
     cacheableFetch,
     deleteCacheItem,

@@ -5,18 +5,18 @@ import { IAxiosRequestConfigExtend, IRequestingUrls } from '../types';
 // 保存未完成的请求地址
 const requestingUrls: IRequestingUrls = {};
 // 删除完成的请求
-export function deleteRequestingAxios(url: string): void {
+export function deleteLockedUrl(url: string): void {
     const urlKey = getAbsoluteUrl(url);
     delete requestingUrls[urlKey];
 }
 // 不能重复提交
-export function notRepeatableAxios(adapter: AxiosAdapter): AxiosAdapter {
+export function lockableAxios(adapter: AxiosAdapter): AxiosAdapter {
     return (config: IAxiosRequestConfigExtend): Promise<any> => {
-        const { url, notRepeatable, isEnqueueSubmit } = config;
+        const { url, lockable, isEnqueueSubmit } = config;
         // 请求地址
         const key: string = getAbsoluteUrl(url || '');
         // 支持重复的请求
-        if (!notRepeatable) {
+        if (!lockable) {
             return adapter(config);
         }
         if (requestingUrls[key]) {
@@ -26,7 +26,7 @@ export function notRepeatableAxios(adapter: AxiosAdapter): AxiosAdapter {
         requestingUrls[key] = true;
         return adapter(config).finally(() => {
             if (!isEnqueueSubmit) {
-                deleteRequestingAxios(key);
+                deleteLockedUrl(key);
             }
         });
     };

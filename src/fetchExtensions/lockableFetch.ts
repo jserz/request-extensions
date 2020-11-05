@@ -4,18 +4,18 @@ import { IRequestingUrls } from '../types'
 // 保存未完成的请求地址
 const requestingUrls: IRequestingUrls = {};
 // 删除完成的请求
-export function deleteRequestingFetch(url: string): void {
+export function deleteLockedUrl(url: string): void {
     const urlKey = getAbsoluteUrl(url);
     delete requestingUrls[urlKey];
 }
 // 不能重复提交
-export function notRepeatableFetch(fetch: any) {
+export function lockableFetch(fetch: any) {
     return (endpoint: string, fetchOptions: any): Promise<any> => {
-        const { notRepeatable, isEnqueueSubmit } = fetchOptions;
+        const { lockable, isEnqueueSubmit } = fetchOptions;
         // 请求地址
         const key: string = getAbsoluteUrl(endpoint);
         // 支持重复的请求
-        if (!notRepeatable) {
+        if (!lockable) {
             return fetch(endpoint, fetchOptions);
         }
         if (requestingUrls[key]) {
@@ -25,7 +25,7 @@ export function notRepeatableFetch(fetch: any) {
         requestingUrls[key] = true;
         return fetch(endpoint, fetchOptions).finally(() => {
             if (!isEnqueueSubmit) {
-                deleteRequestingFetch(key);
+                deleteLockedUrl(key);
             }
         });
     };

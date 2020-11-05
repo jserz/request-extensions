@@ -28,7 +28,7 @@ import { axiosExtensions } from 'request-extensions';
 const {
     cancelableAxios,
     isCancel,
-    notRepeatableAxios,
+    lockableAxios,
     isRepeatSubmit,
     cacheableAxios,
 } = axiosExtensions;
@@ -36,7 +36,7 @@ const {
 // 这个适配器，可以是自定义或用 axios 默认的
 let adapter = axios.defaults.adapter;
 // 使用不能重复提交请求扩展，如果重复提交，后一个提交请求不能发起
-adapter = notRepeatableAxios(adapter);
+adapter = lockableAxios(adapter);
 // 使用可以取消请求扩展，如果前一个请求没有完成，后一个请求又发起，则会取消前一个请求
 adapter = cancelableAxios(adapter);
 // 使用可缓存请求扩展，如果前一个请求已经完成，同时后一个请求和前一个请求参数相同，则可以取缓存数据
@@ -44,7 +44,7 @@ adapter = cacheableAxios(adapter, {
     // 缓存请求的过期间隔，单位毫秒，默认 2分钟（120000ms）
     cacheTimeout: 120000,
     // 获取数据之后是否需要缓存
-    isNeedCache: (res: any): boolean => {
+    isNeedCache: res => {
         return res.success;
     },
     // 最多缓存的数据条数, 默认 50 条
@@ -81,7 +81,7 @@ export default function ajax(config) {
 import ajax from './http.js'
 
 // 可取消的查询请求
-export const queryData = data => {
+const queryData = data => {
     return ajax({
         url: '/api/query-data'
         method: 'get'
@@ -90,6 +90,10 @@ export const queryData = data => {
         cancelable: true,
     });
 }
+
+queryData() // 当前请求会被取消
+
+queryData()
 ```
 
 -   切换路由时，取消未完成的请求
@@ -131,15 +135,20 @@ class App extends React.PureComponent {
 import ajax from './http.js'
 
 // 不能重复的提交请求
-export const postData = data => {
+const postData = data => {
     return ajax({
         url: '/api/post-data'
         method: 'post'
         data,
         // 表示不可重复提交
-        notRepeatable: true,
+        lockable: true,
     });
 }
+
+postData({ a: 'xxx'} );
+
+postData({ a: 'xxx'} ); // 当前请求不能发起
+
 ```
 
 -   可缓存的请求
@@ -148,7 +157,7 @@ export const postData = data => {
 import ajax from './http.js'
 
 // 可缓存的查询请求
-export const getCity = data => {
+const getCity = data => {
     return ajax({
         url: '/api/get-city'
         method: 'get'
@@ -157,6 +166,12 @@ export const getCity = data => {
         cacheable: true,
     });
 }
+
+getCity().then(() => {
+    getCity(); // 当前请求会直接去缓存数据
+})
+
+
 ```
 
 ### fetch
@@ -168,25 +183,25 @@ export const getCity = data => {
 import fetch from 'isomorphic-fetch';
 import { fetchExtensions } from 'request-extensions';
 const {
-    cancelableAxios,
+    cancelableFetch,
     isCancel,
-    notRepeatableAxios,
+    lockableFetch,
     isRepeatSubmit,
-    cacheableAxios,
+    cacheableFetch,
 } = fetchExtensions;
 
-// 这个适配器，可以是自定义或用 axios 默认的
+// 这个适配器，可以是自定义或用 Fetch 默认的
 let extFetch = fetch;
 // 使用不能重复提交请求扩展，如果重复提交，后一个提交请求不能发起
-extFetch = notRepeatableAxios(extFetch);
+extFetch = lockableFetch(extFetch);
 // 使用可以取消请求扩展，如果前一个请求没有完成，后一个请求又发起，则会取消前一个请求
-extFetch = cancelableAxios(extFetch);
+extFetch = cancelableFetch(extFetch);
 // 使用可缓存请求扩展，如果前一个请求已经完成，同时后一个请求和前一个请求参数相同，则可以取缓存数据
-extFetch = cacheableAxios(extFetch, {
+extFetch = cacheableFetch(extFetch, {
     // 缓存请求的过期间隔，单位毫秒，默认 2分钟（120000ms）
     cacheTimeout: 120000,
     // 获取数据之后是否需要缓存
-    isNeedCache: (res: any): boolean => {
+    isNeedCache: res => {
         return res.success;
     },
     // 最多缓存的数据条数, 默认 50 条
@@ -229,7 +244,7 @@ export default function customFech(url, config) {
 import ajax from './fetch.js'
 
 // 可取消的查询请求
-export const queryData = data => {
+const queryData = data => {
     return fetch('/api/query-data', {
         method: 'get'
         params: data,
@@ -237,6 +252,11 @@ export const queryData = data => {
         cancelable: true,
     });
 }
+
+
+queryData() // 当前请求会被取消
+
+queryData()
 ```
 
 -   切换路由时，取消未完成的请求
@@ -278,14 +298,18 @@ class App extends React.PureComponent {
 import fetch from './fetch.js'
 
 // 不能重复的提交请求
-export const postData = data => {
+const postData = data => {
     return fetch('/api/post-data', {
         method: 'post'
         data,
         // 表示不可重复提交
-        notRepeatable: true,
+        lockable: true,
     });
 }
+
+postData({ a: 'xxx'} );
+
+postData({ a: 'xxx'} ); // 当前请求不能发起
 ```
 
 -   可缓存的请求
@@ -294,7 +318,7 @@ export const postData = data => {
 import fetch from './fetch.js'
 
 // 可缓存的查询请求
-export const getCity = data => {
+const getCity = data => {
     return fetch('/api/get-city', {
         method: 'get'
         params: data,
@@ -302,6 +326,10 @@ export const getCity = data => {
         cacheable: true,
     });
 }
+
+getCity().then(() => {
+    getCity(); // 当前请求会直接去缓存数据
+})
 ```
 
 ## request-extensions api
@@ -316,8 +344,8 @@ export const getCity = data => {
 
 #### 不能重复提交请求
 
--   notRepeatableAxios(axiosAdapter): 不能重复提交请求的扩展
--   deleteRequestingAxios(url): 手动删除请求，入列的提交请求需要使用
+-   lockableAxios(axiosAdapter): 不能重复提交请求的扩展
+-   deleteLockedUrl(url): 手动删除请求，入列的提交请求需要使用
 -   isRepeatSubmit(error): 判断该请求是否因为重复提交被阻止，在 catch 中，通过 error 判断
 
 #### 缓存请求
@@ -335,8 +363,8 @@ export const getCity = data => {
 
 #### 重复提交请求
 
--   notRepeatableFetch(fetch): 不能重复提交请求的扩展
--   deleteRequestingFetch(url): 手动删除请求，入列的提交请求需要使用
+-   lockableFetch(fetch): 不能重复提交请求的扩展
+-   deleteLockedUrl(url): 手动删除请求，入列的提交请求需要使用
 -   isRepeatSubmit(error): 判断该请求是否因为重复提交被阻止，在 catch 中，通过 error 判断
 
 #### 缓存请求
@@ -354,8 +382,8 @@ const requestExtensionsConfig = {
     // 切换路由时，是否取消未完成的请求
     onlySwitchRouteCancelable: boolean,
     // 是否不能重复提交请求
-    notRepeatable: boolean,
-    // notRepeatable 为 true 时，该请求是否为入队列的提交请求（就是提交结果需要异步获取），如果是，则提交完成后需要手动删除请求
+    lockable: boolean,
+    // lockable 为 true 时，该请求是否为入队列的提交请求（就是提交结果需要异步获取），如果是，则提交完成后需要手动删除请求
     isEnqueueSubmit: boolean
     // 是否可以缓存请求
     cacheable: boolean,
