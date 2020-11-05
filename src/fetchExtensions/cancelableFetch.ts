@@ -9,6 +9,9 @@ const fetchCancelMap: ICancelMap = {};
 function cancelFetch(key: string): void {
     if (fetchCancelMap[key]) {
         fetchCancelMap[key].abort();
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`【request-extensions】请求已被取消：${key}`);
+        }
         delete fetchCancelMap[key];
     }
 }

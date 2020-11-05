@@ -20,6 +20,9 @@ export function lockableFetch(fetch: any) {
         }
         if (requestingUrls[key]) {
             const message = `请不要重复提交表单：${key}`;
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`【request-extensions】${message}`);
+            }
             return Promise.reject({ __IS_REPEAT_SUBMIT__: true, message });
         }
         requestingUrls[key] = true;

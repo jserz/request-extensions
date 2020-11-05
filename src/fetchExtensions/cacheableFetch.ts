@@ -35,8 +35,9 @@ export function cacheableFetch(fetch: any, options?: ICacheableOptions) {
         // 取缓存
         const cache: ICacheItem | undefined = cachePool.find(item => item.urlKey === urlKey);
         if (!forceUpdate && cache && isEqual(requestParams, cache.params) && Date.now() < cache.expireTime) {
-            const msg = `缓存数据已经存在，直接取缓存数据：${urlKey}`;
-            console.log(msg);
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`【request-extensions】缓存数据已经存在，直接取缓存数据：${urlKey}`);
+            }
             return cache.responsePromise;
         }
         // 发起请求

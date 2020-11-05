@@ -9,6 +9,9 @@ const axiosCancelMap: ICancelMap = {};
 function cancelAxios(key: string): void {
     if (axiosCancelMap[key]) {
         axiosCancelMap[key].cancel('isCanceledRequest');
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`【request-extensions】请求已被取消：${key}`);
+        }
         delete axiosCancelMap[key];
     }
 }
