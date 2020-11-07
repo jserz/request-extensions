@@ -1,6 +1,6 @@
 import 'yet-another-abortcontroller-polyfill';
 import getAbsoluteUrl from '../utils/getAbsoluteUrl';
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4 } from '@lukeed/uuid'
 import { ICancelMap } from '../types'
 
 // 保存未完成的请求的取消对象

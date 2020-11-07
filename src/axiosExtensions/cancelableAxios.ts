@@ -1,6 +1,6 @@
 import axios, { AxiosAdapter, AxiosPromise } from 'axios';
 import getAbsoluteUrl from '../utils/getAbsoluteUrl';
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4 } from '@lukeed/uuid'
 import { IAxiosRequestConfigExtend, ICancelMap } from '../types';
 
 // 保存未完成的请求的取消对象

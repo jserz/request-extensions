@@ -18,8 +18,7 @@ export default {
             format: 'umd',
             sourcemap: true,
             globals: {
-                axios: 'axios',
-                crypto: 'crypto',
+                axios: 'axios'
             },
         },
         {
@@ -27,8 +26,7 @@ export default {
             format: 'es',
             sourcemap: true,
             globals: {
-                axios: 'axios',
-                crypto: 'crypto',
+                axios: 'axios'
             },
         },
     ],
